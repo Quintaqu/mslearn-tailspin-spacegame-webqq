@@ -8,34 +8,49 @@ variables:
   buildConfiguration: 'Release'
   wwwrootDir: 'Tailspin.SpaceGame.Web/wwwroot'
   dotnetSdkVersion: '6.x'
+  nodeVersion: '14.x'   # Use Node 14 to avoid node-sass build errors
 
 steps:
+# Use .NET SDK
 - task: UseDotNet@2
   displayName: 'Use .NET SDK $(dotnetSdkVersion)'
   inputs:
     version: '$(dotnetSdkVersion)'
 
+# Use Node.js 14.x (for node-sass compatibility)
+- task: UseNode@1
+  displayName: 'Use Node.js $(nodeVersion)'
+  inputs:
+    version: '$(nodeVersion)'
+
+# Install npm dependencies
 - task: Npm@1
   displayName: 'Run npm install'
   inputs:
     verbose: false
+    command: 'ci'    # ci is safer and faster for pipelines
 
+# Compile Sass using node-sass
 - script: './node_modules/.bin/node-sass $(wwwrootDir) --output $(wwwrootDir)'
   displayName: 'Compile Sass assets'
 
-- task: gulp@1
+# Run gulp tasks
+- task: Gulp@1
   displayName: 'Run gulp tasks'
 
+# Write build info
 - script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
   displayName: 'Write build info'
   workingDirectory: $(wwwrootDir)
 
+# Restore .NET dependencies
 - task: DotNetCoreCLI@2
   displayName: 'Restore project dependencies'
   inputs:
     command: 'restore'
     projects: '**/*.csproj'
 
+# Build project
 - task: DotNetCoreCLI@2
   displayName: 'Build the project - $(buildConfiguration)'
   inputs:
@@ -43,6 +58,7 @@ steps:
     arguments: '--no-restore --configuration $(buildConfiguration)'
     projects: '**/*.csproj'
 
+# Publish project
 - task: DotNetCoreCLI@2
   displayName: 'Publish the project - $(buildConfiguration)'
   inputs:
@@ -52,6 +68,7 @@ steps:
     arguments: '--no-build --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/$(buildConfiguration)'
     zipAfterPublish: true
 
+# Publish artifacts
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: drop'
   condition: succeeded()
