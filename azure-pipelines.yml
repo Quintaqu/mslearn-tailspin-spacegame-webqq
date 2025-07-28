@@ -36,10 +36,12 @@ steps:
     command: 'restore'
     projects: '**/*.csproj'
 
+# Build using Debug configuration
 - template: templates/build.yml
   parameters:
     buildConfiguration: 'Debug'
 
+# Build using Release configuration
 - template: templates/build.yml
   parameters:
     buildConfiguration: 'Release'
