@@ -2,7 +2,7 @@ trigger:
 - '*'
 
 pool:
-  vmImage: 'ubuntu-latest'   # ✅ Updated from 'ubuntu-20.04'
+  vmImage: 'ubuntu-latest'
   demands:
   - npm
 
@@ -20,7 +20,6 @@ steps:
   inputs:
     version: '$(dotnetSdkVersion)'
 
-# ✅ Added: Use Node.js v16 (compatible with node-sass)
 - task: NodeTool@0
   inputs:
     versionSpec: '16.x'
@@ -61,6 +60,29 @@ steps:
     arguments: '--no-build --configuration $(buildConfiguration)'
     publishTestResults: true
     projects: '**/*.Tests.csproj'
+
+# ✅ Code Coverage Step
+- task: DotNetCoreCLI@2
+  displayName: 'Run tests with code coverage'
+  inputs:
+    command: 'test'
+    projects: '**/Tailspin.SpaceGame.Web.Tests.csproj'
+    arguments: >
+      --no-build
+      --configuration $(buildConfiguration)
+      /p:CollectCoverage=true
+      /p:CoverletOutputFormat=cobertura
+      /p:CoverletOutput=./TestResults/Coverage/
+      /p:Include="[Tailspin.SpaceGame.Web]*"
+
+# Optional: You could publish the coverage file as an artifact too
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Code Coverage Artifact'
+  inputs:
+    PathtoPublish: 'Tailspin.SpaceGame.Web.Tests/TestResults/Coverage'
+    ArtifactName: 'codecoverage'
+    publishLocation: 'Container'
+  condition: succeeded()
 
 - task: DotNetCoreCLI@2
   displayName: 'Publish the project - $(buildConfiguration)'
