@@ -2,7 +2,7 @@ trigger:
 - '*'
 
 pool:
-  vmImage: 'ubuntu-20.04'
+  vmImage: 'ubuntu-latest'
   demands:
   - npm
 
@@ -73,6 +73,13 @@ steps:
     codeCoverageTool: 'cobertura'
     summaryFileLocation: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
 
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Code Coverage Artifact'
+  inputs:
+    PathtoPublish: '$(Build.SourcesDirectory)/CodeCoverage'
+    ArtifactName: 'CodeCoverage'
+    publishLocation: 'Container'
+
 - task: DotNetCoreCLI@2
   displayName: 'Publish the project - $(buildConfiguration)'
   inputs:
@@ -85,3 +92,7 @@ steps:
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: drop'
   condition: succeeded()
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(buildConfiguration)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
