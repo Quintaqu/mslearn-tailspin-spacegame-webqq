@@ -17,6 +17,12 @@ steps:
   inputs:
     version: '$(dotnetSdkVersion)'
 
+# ✅ Install build tools needed for node-gyp
+- script: |
+    sudo apt-get update
+    sudo apt-get install -y build-essential python3 g++ make
+  displayName: 'Install node-gyp build dependencies'
+
 - task: Npm@1
   displayName: 'Run npm install'
   inputs:
