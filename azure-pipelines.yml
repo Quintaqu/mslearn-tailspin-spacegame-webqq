@@ -20,6 +20,12 @@ steps:
   inputs:
     version: '$(dotnetSdkVersion)'
 
+# ✅ Added: Use Node.js v16 (compatible with node-sass)
+- task: NodeTool@0
+  inputs:
+    versionSpec: '16.x'
+  displayName: 'Use Node.js 16.x'
+
 - task: Npm@1
   displayName: 'Run npm install'
   inputs:
