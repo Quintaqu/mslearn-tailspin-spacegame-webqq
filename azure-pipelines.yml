@@ -12,6 +12,9 @@ variables:
   dotnetSdkVersion: '6.x'
 
 steps:
+- checkout: self
+  fetchDepth: 1
+
 - task: UseDotNet@2
   displayName: 'Use .NET SDK $(dotnetSdkVersion)'
   inputs:
