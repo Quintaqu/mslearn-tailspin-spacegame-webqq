@@ -2,28 +2,20 @@ trigger:
 - '*'
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'ubuntu-20.04'
   demands:
   - npm
 
 variables:
   buildConfiguration: 'Release'
   wwwrootDir: 'Tailspin.SpaceGame.Web/wwwroot'
-  dotnetSdkVersion: '8.x'
+  dotnetSdkVersion: '6.x'
 
 steps:
-- checkout: self
-  fetchDepth: 1
-
 - task: UseDotNet@2
   displayName: 'Use .NET SDK $(dotnetSdkVersion)'
   inputs:
     version: '$(dotnetSdkVersion)'
-
-- task: NodeTool@0
-  inputs:
-    versionSpec: '16.x'
-  displayName: 'Use Node.js 16.x'
 
 - task: Npm@1
   displayName: 'Run npm install'
@@ -54,35 +46,32 @@ steps:
     projects: '**/*.csproj'
 
 - task: DotNetCoreCLI@2
+  displayName: 'Install .NET tools from local manifest'
+  inputs:
+    command: custom
+    custom: tool
+    arguments: 'restore'
+
+- task: DotNetCoreCLI@2
   displayName: 'Run unit tests - $(buildConfiguration)'
   inputs:
     command: 'test'
-    arguments: '--no-build --configuration $(buildConfiguration)'
+    arguments: '--no-build --configuration $(buildConfiguration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=$(Build.SourcesDirectory)/TestResults/Coverage/'
     publishTestResults: true
     projects: '**/*.Tests.csproj'
 
-# ✅ Code Coverage Step
 - task: DotNetCoreCLI@2
-  displayName: 'Run tests with code coverage'
+  displayName: 'Create code coverage report'
   inputs:
-    command: 'test'
-    projects: '**/Tailspin.SpaceGame.Web.Tests.csproj'
-    arguments: >
-      --no-build
-      --configuration $(buildConfiguration)
-      /p:CollectCoverage=true
-      /p:CoverletOutputFormat=cobertura
-      /p:CoverletOutput=./TestResults/Coverage/
-      /p:Include="[Tailspin.SpaceGame.Web]*"
+    command: custom
+    custom: tool
+    arguments: 'run reportgenerator -reports:$(Build.SourcesDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/CodeCoverage -reporttypes:HtmlInline_AzurePipelines'
 
-# Optional: You could publish the coverage file as an artifact too
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Code Coverage Artifact'
+- task: PublishCodeCoverageResults@1
+  displayName: 'Publish code coverage report'
   inputs:
-    PathtoPublish: 'Tailspin.SpaceGame.Web.Tests/TestResults/Coverage'
-    ArtifactName: 'codecoverage'
-    publishLocation: 'Container'
-  condition: succeeded()
+    codeCoverageTool: 'cobertura'
+    summaryFileLocation: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
 
 - task: DotNetCoreCLI@2
   displayName: 'Publish the project - $(buildConfiguration)'
