@@ -6,7 +6,8 @@ variables:
   releaseBranchName: 'release'
   dotnetSdkVersion: '8.0.301'
   nodeVersion: '16.x'
-  WebAppNameDev: 'tailspin-space-game-web-dev'  # ✅ Replace with your actual Azure App Service name
+  WebAppNameDev: 'tailspin-space-game-web-dev'     # ✅ Actual Dev App Service name
+  WebAppNameTest: 'tailspin-space-game-web-test'   # ✅ Actual Test App Service name
 
 schedules:
 - cron: '0 3 * * *'
@@ -14,9 +15,12 @@ schedules:
   branches:
     include:
     - release
-  always: false 
+  always: false
 
 stages:
+# ------------------------
+# BUILD STAGE
+# ------------------------
 - stage: 'Build'
   displayName: 'Build the web application'
   jobs: 
@@ -85,6 +89,9 @@ stages:
     - publish: '$(Build.ArtifactStagingDirectory)'
       artifact: drop
 
+# ------------------------
+# DEV STAGE
+# ------------------------
 - stage: 'Dev'
   displayName: 'Deploy to the dev environment'
   dependsOn: Build
@@ -96,7 +103,9 @@ stages:
   jobs:
   - deployment: DeployToDev
     displayName: 'Deploy to Dev App Service'
-    environment: 'dev'
+    environment: 'dev'  # Must match the environment name in Azure DevOps
+    pool:
+      vmImage: 'ubuntu-latest'  # ✅ REQUIRED to fix "no config name or imagelabel" error
     strategy:
       runOnce:
         deploy:
@@ -111,23 +120,25 @@ stages:
               appName: '$(WebAppNameDev)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
 
+# ------------------------
+# TEST STAGE
+# ------------------------
 - stage: 'Test'
   displayName: 'Deploy to the test environment'
   dependsOn: Dev
-  #condition: eq(variables['Build.Reason'], 'Schedule')
   jobs:
   - deployment: Deploy
-    pool:
-      vmImage: 'ubuntu-20.04'
+    displayName: 'Deploy to Test App Service'
     environment: test
-    variables:
-    - group: 'Release'
+    pool:
+      vmImage: 'ubuntu-latest'
     strategy:
       runOnce:
         deploy:
           steps:
           - download: current
             artifact: drop
+
           - task: AzureWebApp@1
             displayName: 'Azure App Service Deploy: website'
             inputs:
