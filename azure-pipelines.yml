@@ -4,6 +4,8 @@ trigger:
 variables:
   buildConfiguration: 'Release'
   releaseBranchName: 'release'
+  dotnetSdkVersion: '8.0.301'
+  nodeVersion: '16.x'
 
 stages:
 - stage: 'Build'
@@ -18,8 +20,6 @@ stages:
 
     variables:
       wwwrootDir: 'Tailspin.SpaceGame.Web/wwwroot'
-      dotnetSdkVersion: '8.0.301'  # Updated to a valid .NET 8 version
-      nodeVersion: '16.x'          # Compatible Node.js version
 
     steps:
     - task: UseDotNet@2
@@ -27,6 +27,7 @@ stages:
       inputs:
         packageType: 'sdk'
         version: '$(dotnetSdkVersion)'
+        includePreviewVersions: false
         installationPath: $(Agent.ToolsDirectory)/dotnet
 
     - task: NodeTool@0
