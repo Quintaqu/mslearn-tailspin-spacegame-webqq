@@ -148,7 +148,7 @@ stages:
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
 
 # ------------------------
-# STAGING STAGE
+# STAGING STAGE (FIXED)
 # ------------------------
 - stage: 'Staging'
   displayName: 'Deploy to the staging environment'
@@ -157,13 +157,13 @@ stages:
   - deployment: DeployToStaging
     displayName: 'Deploy to Staging App Service'
     environment: 'staging'
-    pool:
-      vmImage: 'ubuntu-20.04'
     variables:
     - group: 'Release'
     strategy:
       runOnce:
         deploy:
+          pool:
+            vmImage: 'ubuntu-latest'  # ✅ FIXED: Moved inside `deploy`
           steps:
           - download: current
             artifact: drop
