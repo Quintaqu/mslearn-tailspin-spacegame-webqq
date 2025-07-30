@@ -18,14 +18,16 @@ stages:
 
     variables:
       wwwrootDir: 'Tailspin.SpaceGame.Web/wwwroot'
-      dotnetSdkVersion: '6.x'
-      nodeVersion: '16.x'  # use compatible Node.js version
+      dotnetSdkVersion: '8.0.301'  # Updated to a valid .NET 8 version
+      nodeVersion: '16.x'          # Compatible Node.js version
 
     steps:
     - task: UseDotNet@2
       displayName: 'Use .NET SDK $(dotnetSdkVersion)'
       inputs:
+        packageType: 'sdk'
         version: '$(dotnetSdkVersion)'
+        installationPath: $(Agent.ToolsDirectory)/dotnet
 
     - task: NodeTool@0
       displayName: 'Install Node.js $(nodeVersion)'
