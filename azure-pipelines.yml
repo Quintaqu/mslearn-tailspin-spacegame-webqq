@@ -6,8 +6,9 @@ variables:
   releaseBranchName: 'release'
   dotnetSdkVersion: '8.0.301'
   nodeVersion: '16.x'
-  WebAppNameDev: 'tailspin-space-game-web-dev'     # ✅ Actual Dev App Service name
-  WebAppNameTest: 'tailspin-space-game-web-test'   # ✅ Actual Test App Service name
+  WebAppNameDev: 'tailspin-space-game-web-dev'
+  WebAppNameTest: 'tailspin-space-game-web-test'
+  WebAppNameStaging: 'tailspin-space-game-web-staging'
 
 schedules:
 - cron: '0 3 * * *'
@@ -103,9 +104,9 @@ stages:
   jobs:
   - deployment: DeployToDev
     displayName: 'Deploy to Dev App Service'
-    environment: 'dev'  # Must match the environment name in Azure DevOps
+    environment: 'dev'
     pool:
-      vmImage: 'ubuntu-latest'  # ✅ REQUIRED to fix "no config name or imagelabel" error
+      vmImage: 'ubuntu-latest'
     strategy:
       runOnce:
         deploy:
@@ -127,9 +128,9 @@ stages:
   displayName: 'Deploy to the test environment'
   dependsOn: Dev
   jobs:
-  - deployment: Deploy
+  - deployment: DeployToTest
     displayName: 'Deploy to Test App Service'
-    environment: test
+    environment: 'test'
     pool:
       vmImage: 'ubuntu-latest'
     strategy:
@@ -146,14 +147,18 @@ stages:
               appName: '$(WebAppNameTest)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
 
+# ------------------------
+# STAGING STAGE
+# ------------------------
 - stage: 'Staging'
   displayName: 'Deploy to the staging environment'
   dependsOn: Test
   jobs:
-  - deployment: Deploy
+  - deployment: DeployToStaging
+    displayName: 'Deploy to Staging App Service'
+    environment: 'staging'
     pool:
       vmImage: 'ubuntu-20.04'
-    environment: staging
     variables:
     - group: 'Release'
     strategy:
@@ -162,6 +167,7 @@ stages:
           steps:
           - download: current
             artifact: drop
+
           - task: AzureWebApp@1
             displayName: 'Azure App Service Deploy: website'
             inputs:
