@@ -6,6 +6,7 @@ variables:
   releaseBranchName: 'release'
   dotnetSdkVersion: '8.0.301'
   nodeVersion: '16.x'
+  WebAppNameDev: 'tailspin-spacegame-dev'  # ✅ Replace with your actual Azure App Service name
 
 stages:
 - stage: 'Build'
@@ -87,7 +88,7 @@ stages:
   jobs:
   - deployment: DeployToDev
     displayName: 'Deploy to Dev App Service'
-    environment: 'dev'  # Make sure this matches the environment name in Azure DevOps
+    environment: 'dev'
     strategy:
       runOnce:
         deploy:
