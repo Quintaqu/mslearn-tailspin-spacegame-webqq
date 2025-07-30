@@ -6,7 +6,7 @@ variables:
   releaseBranchName: 'release'
   dotnetSdkVersion: '8.0.301'
   nodeVersion: '16.x'
-  WebAppNameDev: 'tailspin-spacegame-dev'  # ✅ Replace with your actual Azure App Service name
+  WebAppNameDev: 'tailspin-space-game-web-dev'  # ✅ Replace with your actual Azure App Service name
 
 stages:
 - stage: 'Build'
