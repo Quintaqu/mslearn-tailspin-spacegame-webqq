@@ -80,24 +80,21 @@ stages:
   displayName: 'Deploy to the dev environment'
   dependsOn: Build
   condition: |
-    and
-    (
+    and(
       succeeded(),
       eq(variables['Build.SourceBranchName'], variables['releaseBranchName'])
     )
   jobs:
-  - deployment: Deploy
-    pool:
-      vmImage: 'ubuntu-20.04'
-    environment: dev
-    variables:
-    - group: Release
+  - deployment: DeployToDev
+    displayName: 'Deploy to Dev App Service'
+    environment: 'dev'  # Make sure this matches the environment name in Azure DevOps
     strategy:
       runOnce:
         deploy:
           steps:
           - download: current
             artifact: drop
+
           - task: AzureWebApp@1
             displayName: 'Azure App Service Deploy: website'
             inputs:
