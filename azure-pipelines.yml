@@ -4,7 +4,8 @@ trigger:
 variables:
   buildConfiguration: 'Release'
   dotnetSdkVersion: '8.x'
-  nodeVersion: '16.x'  # ✅ Downgraded to avoid node-sass/node-gyp build issues
+  nodeVersion: '16.x'
+  containerImage: 'myregistry.azurecr.io/myapp:$(Build.BuildId)'
 
 stages:
 - stage: 'Build'
@@ -83,8 +84,6 @@ stages:
     environment: dev
     variables:
     - group: Release
-    - name: containerImage
-      value: 'myregistry.azurecr.io/myapp:$(Build.BuildId)'  # Replace with your actual image
     strategy:
       runOnce:
         deploy:
@@ -111,9 +110,7 @@ stages:
       vmImage: 'ubuntu-20.04'
     environment: test
     variables:
-    - group: Release
-    - name: containerImage
-      value: 'myregistry.azurecr.io/myapp:$(Build.BuildId)'  # Use the same image for test
+    - group: 'Release'
     strategy:
       runOnce:
         deploy:
@@ -135,7 +132,7 @@ stages:
       vmImage: 'windows-2019'
     variables:
     - group: 'Release'
-    steps: 
+    steps:
     - task: UseDotNet@2
       displayName: 'Use .NET SDK $(dotnetSdkVersion)'
       inputs:
@@ -168,9 +165,7 @@ stages:
       vmImage: 'ubuntu-20.04'
     environment: staging
     variables:
-    - group: Release
-    - name: containerImage
-      value: 'myregistry.azurecr.io/myapp:$(Build.BuildId)'  # Replace if needed
+    - group: 'Release'
     strategy:
       runOnce:
         deploy:
