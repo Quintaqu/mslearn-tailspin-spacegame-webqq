@@ -65,6 +65,23 @@ stages:
 
     - publish: '$(Build.ArtifactStagingDirectory)'
       artifact: drop
+- task: NodeTool@0
+  inputs:
+    versionSpec: '20.x'
+  displayName: 'Use Node.js 20'
+
+- script: |
+    sudo apt-get update
+    sudo apt-get install -y build-essential python3 make g++
+  displayName: 'Install build tools for node-gyp'
+
+- script: |
+    npm config set python python3
+  displayName: 'Set Python version for node-gyp'
+
+- script: |
+    npm install
+  displayName: 'Install npm packages'
 
 - stage: 'Dev'
   displayName: 'Deploy to the dev environment'
