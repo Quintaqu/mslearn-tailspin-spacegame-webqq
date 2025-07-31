@@ -28,8 +28,12 @@ stages:
         versionSpec: '20.x'
       displayName: 'Use Node.js 20'
 
-    # Install required build tools for node-gyp and set PYTHON env var
- # Install Dart Sass instead of node-sass
+    # Install dependencies
+    - script: |
+        npm install
+      displayName: 'Install NPM dependencies'
+
+    # Compile Sass using Dart Sass
     - script: |
         npm install -g sass
       displayName: 'Install Dart Sass globally'
@@ -38,7 +42,9 @@ stages:
         sass $(wwwrootDir):$(wwwrootDir)
       displayName: 'Compile Sass using Dart Sass'
 
-    - task: gulp@1
+    # Run Gulp using local install via npx
+    - script: |
+        npx gulp
       displayName: 'Run gulp tasks'
 
     - script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
