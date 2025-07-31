@@ -75,9 +75,6 @@ stages:
     - publish: '$(Build.ArtifactStagingDirectory)'
       artifact: drop
 
-# ====================
-# Deployment: Dev
-# ====================
 - stage: 'Dev'
   displayName: 'Deploy to the dev environment'
   dependsOn: Build
@@ -88,18 +85,21 @@ stages:
     environment: dev
     variables:
     - group: Release
+    - name: containerImage
+      value: 'myregistry.azurecr.io/myapp:$(Build.BuildId)'  # Update this
     strategy:
       runOnce:
         deploy:
           steps:
           - download: current
             artifact: drop
-          - task: AzureWebApp@1
-            displayName: 'Azure App Service Deploy: website'
+          - task: AzureWebAppContainer@1
+            displayName: 'Deploy Docker container to Dev App Service'
             inputs:
               azureSubscription: 'Resource Manager - Tailspin - Space Game'
               appName: '$(WebAppNameDev)'
-              package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
+              containers: |
+                $(containerImage)
 
 # ====================
 # Deployment: Test
