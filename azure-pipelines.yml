@@ -33,14 +33,14 @@ stages:
 
     - script: |
         sudo apt-get update
-        sudo apt-get install -y build-essential python3 make g++
+        sudo apt-get install -y build-essential python3 make g++ gcc
       displayName: 'Install build tools for node-gyp'
 
     - script: |
         echo "Setting Python version for node-gyp"
       displayName: 'Set Python version for node-gyp'
       env:
-        PYTHON: python3
+        PYTHON: /usr/bin/python3
 
     - task: Npm@1
       displayName: 'Run npm install'
