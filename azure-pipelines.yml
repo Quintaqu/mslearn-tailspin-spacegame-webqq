@@ -4,7 +4,7 @@ trigger:
 variables:
   buildConfiguration: 'Release'
   dotnetSdkVersion: '8.x'
-  nodeVersion: '16.x'
+  nodeVersion: '16.x'  # ✅ Downgraded to avoid node-sass/node-gyp build issues
 
 stages:
 - stage: 'Build'
@@ -29,22 +29,27 @@ stages:
         versionSpec: '$(nodeVersion)'
       displayName: 'Use Node.js $(nodeVersion)'
 
+    # ✅ Install frontend dependencies
     - script: npm install
       displayName: 'Install NPM dependencies'
 
+    # ✅ Install Dart Sass instead of node-sass
     - script: npm install -g sass
       displayName: 'Install Dart Sass globally'
 
     - script: sass $(wwwrootDir):$(wwwrootDir)
       displayName: 'Compile Sass using Dart Sass'
 
+    # ✅ Gulp build step
     - script: npx gulp
       displayName: 'Run gulp tasks'
 
+    # Write build info to file
     - script: echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt
       displayName: 'Write build info'
       workingDirectory: $(wwwrootDir)
 
+    # .NET Restore, Build, Publish
     - task: DotNetCoreCLI@2
       displayName: 'Restore project dependencies'
       inputs:
@@ -93,7 +98,6 @@ stages:
             displayName: 'Azure App Service Deploy: website'
             inputs:
               azureSubscription: 'Resource Manager - Tailspin - Space Game'
-              appType: 'webAppLinux'
               appName: '$(WebAppNameDev)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
 
@@ -120,7 +124,6 @@ stages:
             displayName: 'Azure App Service Deploy: website'
             inputs:
               azureSubscription: 'Resource Manager - Tailspin - Space Game'
-              appType: 'webAppLinux'
               appName: '$(WebAppNameTest)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
 
@@ -175,6 +178,5 @@ stages:
             displayName: 'Azure App Service Deploy: website'
             inputs:
               azureSubscription: 'Resource Manager - Tailspin - Space Game'
-              appType: 'webAppLinux'
               appName: '$(WebAppNameStaging)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
