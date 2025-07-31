@@ -28,17 +28,12 @@ stages:
         versionSpec: '20.x'
       displayName: 'Use Node.js 20'
 
-    # Install required build tools for node-gyp
+    # Install required build tools for node-gyp and set PYTHON env var
     - script: |
         sudo apt-get update
         sudo apt-get install -y build-essential python3 g++ make
         sudo npm install -g node-gyp
       displayName: 'Install dependencies for node-gyp'
-
-    # Explicitly set python path for node-gyp
-    - script: |
-        echo "Setting Python for node-gyp"
-      displayName: 'Set Python env for node-gyp'
       env:
         PYTHON: /usr/bin/python3
 
