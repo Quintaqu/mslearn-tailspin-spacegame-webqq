@@ -6,10 +6,10 @@ variables:
   dotnetSdkVersion: '8.x'
 
 stages:
-- stage: Build
+- stage: 'Build'
   displayName: 'Build the web application'
   jobs: 
-  - job: Build
+  - job: 'Build'
     displayName: 'Build job'
     pool:
       vmImage: 'ubuntu-20.04'
@@ -18,6 +18,7 @@ stages:
 
     variables:
       wwwrootDir: 'Tailspin.SpaceGame.Web/wwwroot'
+      dotnetSdkVersion: '8.x'
 
     steps:
     - task: UseDotNet@2
@@ -65,8 +66,7 @@ stages:
     - publish: '$(Build.ArtifactStagingDirectory)'
       artifact: drop
 
-# Deploy to Dev
-- stage: Dev
+- stage: 'Dev'
   displayName: 'Deploy to the dev environment'
   dependsOn: Build
   jobs:
@@ -83,24 +83,22 @@ stages:
           - download: current
             artifact: drop
           - task: AzureWebApp@1
-            displayName: 'Azure App Service Deploy: Dev'
+            displayName: 'Azure App Service Deploy: website'
             inputs:
               azureSubscription: 'Resource Manager - Tailspin - Space Game'
               appName: '$(WebAppNameDev)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
 
-# Deploy to Test + Run UI Tests
-- stage: Test
-  displayName: 'Deploy to the test environment and run UI tests'
+- stage: 'Test'
+  displayName: 'Deploy to the test environment'
   dependsOn: Dev
   jobs:
-  - deployment: DeployTest
-    displayName: 'Deploy to Test'
+  - deployment: Deploy
     pool:
       vmImage: 'ubuntu-20.04'
     environment: test
     variables:
-    - group: Release
+    - group: 'Release'
     strategy:
       runOnce:
         deploy:
@@ -108,48 +106,38 @@ stages:
           - download: current
             artifact: drop
           - task: AzureWebApp@1
-            displayName: 'Azure App Service Deploy: Test'
+            displayName: 'Azure App Service Deploy: website'
             inputs:
               azureSubscription: 'Resource Manager - Tailspin - Space Game'
               appName: '$(WebAppNameTest)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
-
   - job: RunUITests
+    dependsOn: Deploy
     displayName: 'Run UI tests'
-    dependsOn: DeployTest
     pool:
       vmImage: 'windows-2019'
     variables:
-    - group: Release
-    steps:
+    - group: 'Release'
+    steps: 
     - task: UseDotNet@2
       displayName: 'Use .NET SDK $(dotnetSdkVersion)'
       inputs:
         version: '$(dotnetSdkVersion)'
-
     - task: DotNetCoreCLI@2
-      displayName: 'Build UI test project'
+      displayName: 'Build the project - $(buildConfiguration)'
       inputs:
         command: 'build'
         arguments: '--configuration $(buildConfiguration)'
         projects: '$(System.DefaultWorkingDirectory)/**/*UITests.csproj'
-
     - task: DotNetCoreCLI@2
-      displayName: 'Run UI tests'
+      displayName: 'Run unit tests - $(buildConfiguration)'
       inputs:
         command: 'test'
-        arguments: '--no-build --configuration $(buildConfiguration) --logger:trx'
+        arguments: '--no-build --configuration $(buildConfiguration)'
+        publishTestResults: true
         projects: '$(System.DefaultWorkingDirectory)/**/*UITests.csproj'
 
-    - task: PublishTestResults@2
-      displayName: 'Publish UI test results'
-      inputs:
-        testResultsFormat: 'VSTest'
-        testResultsFiles: '**/TestResults/*.trx'
-        failTaskOnFailedTests: true
-
-# Deploy to Staging
-- stage: Staging
+- stage: 'Staging'
   displayName: 'Deploy to the staging environment'
   dependsOn: Test
   jobs:
@@ -158,7 +146,7 @@ stages:
       vmImage: 'ubuntu-20.04'
     environment: staging
     variables:
-    - group: Release
+    - group: 'Release'
     strategy:
       runOnce:
         deploy:
@@ -166,7 +154,7 @@ stages:
           - download: current
             artifact: drop
           - task: AzureWebApp@1
-            displayName: 'Azure App Service Deploy: Staging'
+            displayName: 'Azure App Service Deploy: website'
             inputs:
               azureSubscription: 'Resource Manager - Tailspin - Space Game'
               appName: '$(WebAppNameStaging)'
