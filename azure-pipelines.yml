@@ -26,6 +26,20 @@ stages:
       inputs:
         version: '$(dotnetSdkVersion)'
 
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '20.x'
+      displayName: 'Use Node.js 20'
+
+    - script: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential python3 make g++
+      displayName: 'Install build tools for node-gyp'
+
+    - script: |
+        npm config set python python3
+      displayName: 'Set Python version for node-gyp'
+
     - task: Npm@1
       displayName: 'Run npm install'
       inputs:
@@ -65,23 +79,6 @@ stages:
 
     - publish: '$(Build.ArtifactStagingDirectory)'
       artifact: drop
-- task: NodeTool@0
-  inputs:
-    versionSpec: '20.x'
-  displayName: 'Use Node.js 20'
-
-- script: |
-    sudo apt-get update
-    sudo apt-get install -y build-essential python3 make g++
-  displayName: 'Install build tools for node-gyp'
-
-- script: |
-    npm config set python python3
-  displayName: 'Set Python version for node-gyp'
-
-- script: |
-    npm install
-  displayName: 'Install npm packages'
 
 - stage: 'Dev'
   displayName: 'Deploy to the dev environment'
@@ -128,6 +125,7 @@ stages:
               azureSubscription: 'Resource Manager - Tailspin - Space Game'
               appName: '$(WebAppNameTest)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
+
   - job: RunUITests
     dependsOn: Deploy
     displayName: 'Run UI tests'
@@ -140,12 +138,14 @@ stages:
       displayName: 'Use .NET SDK $(dotnetSdkVersion)'
       inputs:
         version: '$(dotnetSdkVersion)'
+
     - task: DotNetCoreCLI@2
       displayName: 'Build the project - $(buildConfiguration)'
       inputs:
         command: 'build'
         arguments: '--configuration $(buildConfiguration)'
         projects: '$(System.DefaultWorkingDirectory)/**/*UITests.csproj'
+
     - task: DotNetCoreCLI@2
       displayName: 'Run unit tests - $(buildConfiguration)'
       inputs:
