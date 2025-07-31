@@ -37,8 +37,11 @@ stages:
       displayName: 'Install build tools for node-gyp'
 
     - script: |
-        npm config set python python3
-      displayName: 'Set Python version for node-gyp'
+    echo "Setting Python version for node-gyp"
+  displayName: 'Set Python version for node-gyp'
+  env:
+    PYTHON: python3
+
 
     - task: Npm@1
       displayName: 'Run npm install'
