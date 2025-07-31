@@ -29,27 +29,22 @@ stages:
         versionSpec: '$(nodeVersion)'
       displayName: 'Use Node.js $(nodeVersion)'
 
-    # ✅ Install frontend dependencies
     - script: npm install
       displayName: 'Install NPM dependencies'
 
-    # ✅ Install Dart Sass instead of node-sass
     - script: npm install -g sass
       displayName: 'Install Dart Sass globally'
 
     - script: sass $(wwwrootDir):$(wwwrootDir)
       displayName: 'Compile Sass using Dart Sass'
 
-    # ✅ Gulp build step
     - script: npx gulp
       displayName: 'Run gulp tasks'
 
-    # Write build info to file
     - script: echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt
       displayName: 'Write build info'
       workingDirectory: $(wwwrootDir)
 
-    # .NET Restore, Build, Publish
     - task: DotNetCoreCLI@2
       displayName: 'Restore project dependencies'
       inputs:
@@ -67,7 +62,7 @@ stages:
       displayName: 'Publish the project - $(buildConfiguration)'
       inputs:
         command: 'publish'
-        projects: '$(System.DefaultWorkingDirectory)/**/Tailspin.SpaceGame.Web.csproj' 
+        projects: '$(System.DefaultWorkingDirectory)/**/Tailspin.SpaceGame.Web.csproj'
         publishWebProjects: false
         arguments: '--no-build --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/$(buildConfiguration)'
         zipAfterPublish: true
@@ -75,6 +70,9 @@ stages:
     - publish: '$(Build.ArtifactStagingDirectory)'
       artifact: drop
 
+# ====================
+# Deployment: Dev
+# ====================
 - stage: 'Dev'
   displayName: 'Deploy to the dev environment'
   dependsOn: Build
@@ -86,7 +84,7 @@ stages:
     variables:
     - group: Release
     - name: containerImage
-      value: 'myregistry.azurecr.io/myapp:$(Build.BuildId)'  # Update this
+      value: 'myregistry.azurecr.io/myapp:$(Build.BuildId)'  # Replace with your actual image
     strategy:
       runOnce:
         deploy:
@@ -113,19 +111,22 @@ stages:
       vmImage: 'ubuntu-20.04'
     environment: test
     variables:
-    - group: 'Release'
+    - group: Release
+    - name: containerImage
+      value: 'myregistry.azurecr.io/myapp:$(Build.BuildId)'  # Use the same image for test
     strategy:
       runOnce:
         deploy:
           steps:
           - download: current
             artifact: drop
-          - task: AzureWebApp@1
-            displayName: 'Azure App Service Deploy: website'
+          - task: AzureWebAppContainer@1
+            displayName: 'Deploy Docker container to Test App Service'
             inputs:
               azureSubscription: 'Resource Manager - Tailspin - Space Game'
               appName: '$(WebAppNameTest)'
-              package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
+              containers: |
+                $(containerImage)
 
   - job: RunUITests
     dependsOn: Deploy
@@ -167,16 +168,19 @@ stages:
       vmImage: 'ubuntu-20.04'
     environment: staging
     variables:
-    - group: 'Release'
+    - group: Release
+    - name: containerImage
+      value: 'myregistry.azurecr.io/myapp:$(Build.BuildId)'  # Replace if needed
     strategy:
       runOnce:
         deploy:
           steps:
           - download: current
             artifact: drop
-          - task: AzureWebApp@1
-            displayName: 'Azure App Service Deploy: website'
+          - task: AzureWebAppContainer@1
+            displayName: 'Deploy Docker container to Staging App Service'
             inputs:
               azureSubscription: 'Resource Manager - Tailspin - Space Game'
               appName: '$(WebAppNameStaging)'
-              package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
+              containers: |
+                $(containerImage)
