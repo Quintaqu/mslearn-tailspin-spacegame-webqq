@@ -4,6 +4,7 @@ trigger:
 variables:
   buildConfiguration: 'Release'
   dotnetSdkVersion: '8.x'
+  nodeVersion: '16.x'  # ✅ Downgraded to avoid node-sass/node-gyp build issues
 
 stages:
 - stage: 'Build'
@@ -25,32 +26,30 @@ stages:
 
     - task: NodeTool@0
       inputs:
-        versionSpec: '20.x'
-      displayName: 'Use Node.js 20'
+        versionSpec: '$(nodeVersion)'
+      displayName: 'Use Node.js $(nodeVersion)'
 
-    # Install dependencies
-    - script: |
-        npm install
+    # ✅ Install frontend dependencies
+    - script: npm install
       displayName: 'Install NPM dependencies'
 
-    # Compile Sass using Dart Sass
-    - script: |
-        npm install -g sass
+    # ✅ Install Dart Sass instead of node-sass
+    - script: npm install -g sass
       displayName: 'Install Dart Sass globally'
 
-    - script: |
-        sass $(wwwrootDir):$(wwwrootDir)
+    - script: sass $(wwwrootDir):$(wwwrootDir)
       displayName: 'Compile Sass using Dart Sass'
 
-    # Run Gulp using local install via npx
-    - script: |
-        npx gulp
+    # ✅ Gulp build step
+    - script: npx gulp
       displayName: 'Run gulp tasks'
 
-    - script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
+    # Write build info to file
+    - script: echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt
       displayName: 'Write build info'
       workingDirectory: $(wwwrootDir)
 
+    # .NET Restore, Build, Publish
     - task: DotNetCoreCLI@2
       displayName: 'Restore project dependencies'
       inputs:
@@ -76,6 +75,9 @@ stages:
     - publish: '$(Build.ArtifactStagingDirectory)'
       artifact: drop
 
+# ====================
+# Deployment: Dev
+# ====================
 - stage: 'Dev'
   displayName: 'Deploy to the dev environment'
   dependsOn: Build
@@ -99,6 +101,9 @@ stages:
               appName: '$(WebAppNameDev)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
 
+# ====================
+# Deployment: Test
+# ====================
 - stage: 'Test'
   displayName: 'Deploy to the test environment'
   dependsOn: Dev
@@ -136,20 +141,23 @@ stages:
         version: '$(dotnetSdkVersion)'
 
     - task: DotNetCoreCLI@2
-      displayName: 'Build the project - $(buildConfiguration)'
+      displayName: 'Build UI test project'
       inputs:
         command: 'build'
         arguments: '--configuration $(buildConfiguration)'
         projects: '$(System.DefaultWorkingDirectory)/**/*UITests.csproj'
 
     - task: DotNetCoreCLI@2
-      displayName: 'Run unit tests - $(buildConfiguration)'
+      displayName: 'Run UI tests - $(buildConfiguration)'
       inputs:
         command: 'test'
         arguments: '--no-build --configuration $(buildConfiguration)'
         publishTestResults: true
         projects: '$(System.DefaultWorkingDirectory)/**/*UITests.csproj'
 
+# ====================
+# Deployment: Staging
+# ====================
 - stage: 'Staging'
   displayName: 'Deploy to the staging environment'
   dependsOn: Test
