@@ -29,21 +29,14 @@ stages:
       displayName: 'Use Node.js 20'
 
     # Install required build tools for node-gyp and set PYTHON env var
+ # Install Dart Sass instead of node-sass
     - script: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential python3 g++ make
-        sudo npm install -g node-gyp
-      displayName: 'Install dependencies for node-gyp'
-      env:
-        PYTHON: /usr/bin/python3
+        npm install -g sass
+      displayName: 'Install Dart Sass globally'
 
-    - task: Npm@1
-      displayName: 'Run npm install'
-      inputs:
-        verbose: false
-
-    - script: './node_modules/.bin/node-sass $(wwwrootDir) --output $(wwwrootDir)'
-      displayName: 'Compile Sass assets'
+    - script: |
+        sass $(wwwrootDir):$(wwwrootDir)
+      displayName: 'Compile Sass using Dart Sass'
 
     - task: gulp@1
       displayName: 'Run gulp tasks'
